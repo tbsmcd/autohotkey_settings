@@ -146,7 +146,7 @@ Alt::
             name_disabled := ""
             if not WinExist(v["win_title"]) {
                 opt_disabled := "disabled "
-                name_disabled := " (not started)"
+                name_disabled := " (Not Running)"
             }
             MyGui.Add("Button", opt_disabled "W250", v["app_name"] name_disabled).OnEvent("click", v["func"])
         }
@@ -159,7 +159,8 @@ Alt::
 ===================================
 ローマ字を再変換
 右シフト 2連打で発火 Interval <= 400ms
-選択中のテキストが `半角英数-~のみ1文字以上` の場合だけ有効
+選択中のテキストが `半角英数-~のみ1文字以上(末尾の空白だけ許容)` の場合だけ有効
+    末尾の空白は単語を打鍵→変換の流れで打ってしまうから
 ===================================
 */
 
@@ -170,7 +171,8 @@ RShift::{
         Send "^c"
         ClipWait 0.5
         copied := String(A_Clipboard)
-        if (RegExMatch(copied, "^[0-9a-zA-Z\-\~]+$")) {
+        if (RegExMatch(copied, "^[0-9a-zA-Z\-\~]+\s*$")) {
+            copied := StrReplace(copied, " ")
             Send "{F13}" copied
         }
         A_Clipboard := clip_data
@@ -211,4 +213,25 @@ RShift & g::{
         Send "{Enter}"
     }
     A_Clipboard := clip_data
+}
+
+/*
+===================================
+どのアプリからも Edge の新タブを開く
+右 Shift + t で発火
+※ メインブラウザが Edge, Chrome も併用しているのが前提
+- Edge が開いている場合は Edge で開く
+- 開いていない場合はメッセージを表示
+===================================
+*/
+
+RShift & t::{
+    if not WinActive("ahk_exe chrome.exe") {
+        if WinExist("ahk_exe msedge.exe") {
+            WinActivate
+            Send "^t"
+        } else {
+            MsgBox "Edge が起動していません"
+        }
+    }
 }
