@@ -48,10 +48,18 @@ switch_app_status(title, cmd:="") {
 /*
  Esc で IMEオフ + Esc 送出
  Google IME の設定で F12 に「IME無効化」を割り当てている
+ Edge, Chrome がアクティブの場合は F12 を送信しない
+ (Dev Tools が開くため)
  $ は Esc の無限ループ防止のため
 */
-$Esc::Send '{Esc}{F12}'
-
+$Esc::
+{
+    if (WinActive("ahk_exe chrome.exe") or WinActive("ahk_exe msedge.exe")) {
+        Send '{Esc}'
+    } else {
+        Send '{Esc}{F12}'
+    }
+}
 /*
 ===================================
 ホットキー
@@ -150,7 +158,8 @@ Alt::
             }
             MyGui.Add("Button", opt_disabled "W250", v["app_name"] name_disabled).OnEvent("click", v["func"])
         }
-        MyGui.OnEvent("Escape", exit_gui)
+        MyGui.OnEvent("Escape", exit_gui) ; 10秒後にウインドウを閉じる
+        SetTimer(exit_gui, 10000)
         MyGui.show()
     }
 }
@@ -210,6 +219,7 @@ RShift & g::{
         }
         Send "^t"
         Send copied
+        Sleep 100 ; ブラウザから実行した場合に Enter が空打ちされるのを防ぐため
         Send "{Enter}"
     }
     A_Clipboard := clip_data
