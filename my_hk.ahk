@@ -198,6 +198,11 @@ RShift::{
 - それ以外で操作した場合
     - Edge が開いている場合は Edge で開く
     - 開いていない場合はメッセージを表示
+
+検索文字列の入力には Send ではなく SendInput を使う
+> また、送信中にキーボードやマウスを操作した場合、バッファリングが行われるため、
+> ユーザーのキー入力と送信中のキー入力が混在することを防ぐことができます。
+https://ahkscript.github.io/ja/docs/v2/lib/Send.htm
 ===================================
 */
 
@@ -218,9 +223,7 @@ RShift & g::{
             }
         }
         Send "^t"
-        Send copied
-        Sleep 100 ; ブラウザから実行した場合に Enter が空打ちされるのを防ぐため
-        Send "{Enter}"
+        SendInput copied "{Enter}"
     }
     A_Clipboard := clip_data
 }
