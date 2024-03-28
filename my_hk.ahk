@@ -234,7 +234,7 @@ URL の入力には Send ではなく SendInput を使う
 ===================================
 */
 
-RShift & M::{
+RShift & m::{
     if WinExist("ahk_exe msedge.exe") {
         WinActivate
         clip_data := ClipboardAll()
