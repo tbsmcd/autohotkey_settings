@@ -212,7 +212,7 @@ RShift & g::{
     Send "^c"
     ClipWait 1
     copied := String(A_Clipboard)
-    if (copied != "") {
+    if (String(A_Clipboard) != "") {
         if not WinActive("ahk_exe chrome.exe") {
             if WinExist("ahk_exe msedge.exe") {
                 WinActivate
@@ -222,10 +222,49 @@ RShift & g::{
                 return
             }
         }
-        Send "^t"
-        SendInput copied "{Enter}"
+        SendInput "^t" "^v" "{Enter}"
     }
     A_Clipboard := clip_data
+}
+
+/*
+===================================
+Edge でメールを開く
+URL の入力には Send ではなく SendInput を使う
+===================================
+*/
+
+RShift & M::{
+    if WinExist("ahk_exe msedge.exe") {
+        WinActivate
+        clip_data := ClipboardAll()
+        A_Clipboard := "https://outlook.office.com/mail/"
+        SendInput "^t" "^v" "{Enter}"
+        A_Clipboard := clip_data
+    } else {
+        MsgBox "Edge が起動していません"
+        return
+    }
+}
+
+/*
+===================================
+Edge カレンダーを開く
+URL の入力には Send ではなく SendInput を使う
+===================================
+*/
+
+RShift & c::{
+    if WinExist("ahk_exe msedge.exe") {
+        WinActivate
+        clip_data := ClipboardAll()
+        A_Clipboard := "https://outlook.office.com/calendar/view/week"
+        SendInput "^t" "^v" "{Enter}"
+        A_Clipboard := clip_data
+    } else {
+        MsgBox "Edge が起動していません"
+        return
+    }
 }
 
 /*
