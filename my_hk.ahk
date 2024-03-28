@@ -238,8 +238,11 @@ RShift & m::{
     if WinExist("ahk_exe msedge.exe") {
         WinActivate
         clip_data := ClipboardAll()
+        A_Clipboard := ""
         A_Clipboard := "https://outlook.office.com/mail/"
+        ClipWait 1
         SendInput "^t" "^v" "{Enter}"
+        sleep 500
         A_Clipboard := clip_data
     } else {
         MsgBox "Edge が起動していません"
@@ -258,8 +261,11 @@ RShift & c::{
     if WinExist("ahk_exe msedge.exe") {
         WinActivate
         clip_data := ClipboardAll()
+        A_Clipboard := ""
         A_Clipboard := "https://outlook.office.com/calendar/view/week"
+        ClipWait 1
         SendInput "^t" "^v" "{Enter}"
+        sleep 500
         A_Clipboard := clip_data
     } else {
         MsgBox "Edge が起動していません"
