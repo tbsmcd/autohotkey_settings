@@ -39,6 +39,9 @@ SwitchAppStatus(title, cmd:="") {
 
 /*
 貼り付け完了を待つ
+貼り付けた後に全選択・コピーして貼り付けたテキストが含まれるか確認する
+含まれていたら OK 
+前後のクリップボードの内容を保全する
 - copied: 貼り付けるテキスト
 - max_loop: ループ回数の上限
 */
@@ -47,7 +50,7 @@ PasteAndWait(text, max_loop := 500) {
     tmp_clip := ClipboardAll()
     i := 0
     Loop {
-        SendInput "^c"
+        SendInput "^a" "^c"
         sleep 50
         i += 1
         if (InStr(String(A_Clipboard), text) || i >= max_loop) {
