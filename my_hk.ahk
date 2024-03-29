@@ -16,7 +16,7 @@ title: Window Titles https://ahkscript.github.io/ja/docs/v2/misc/WinTitle.htm
 cmd: アプリを起動するためのコマンド
 */
 
-switch_app_status(title, cmd:="") {
+SwitchAppStatus(title, cmd:="") {
 	if WinExist(title) {
 		if WinActive() {
 			WinMoveBottom
@@ -35,6 +35,26 @@ switch_app_status(title, cmd:="") {
             MsgBox "このアプリケーションは起動していません"
         }
 	}
+}
+
+/*
+貼り付け完了を待つ
+- copied: 貼り付けるテキスト
+- max_loop: ループ回数の上限
+*/
+PasteAndWait(text, max_loop := 500) {
+    SendInput "^v"
+    tmp_clip := ClipboardAll()
+    i := 0
+    Loop {
+        SendInput "^c"
+        sleep 50
+        i ++
+        if (InStr(String(A_Clipboard), text) || i >= max_loop) {
+            break
+        }
+    }
+    A_Clipboard := tmp_clip
 }
 
 
@@ -73,7 +93,7 @@ Ctrl + Enter Windows Terminal
 */
 ^Enter::
 {
-	switch_app_status("ahk_exe WindowsTerminal.exe", "wt -p Ubuntu")
+	SwitchAppStatus("ahk_exe WindowsTerminal.exe", "wt -p Ubuntu")
 }
 
 
@@ -82,7 +102,7 @@ Ctrl + \ エクスプローラー
 */
 ^\::
 {
-	switch_app_status("ahk_class CabinetWClass", "explorer")
+	SwitchAppStatus("ahk_class CabinetWClass", "explorer")
 }
 
 
@@ -91,7 +111,7 @@ Ctrl + 0 VSCode
 */
 ^0::
 {
-	switch_app_status("ahk_exe Code.exe", "Code")
+	SwitchAppStatus("ahk_exe Code.exe", "Code")
 }
 
 
@@ -104,27 +124,27 @@ GUI
 アプリ未起動時は button が disabled になる
 ===================================
 */
-a_outlook(*) {
-    switch_app_status("ahk_exe outlook.exe")
+ToggleOutlook(*) {
+    SwitchAppStatus("ahk_exe outlook.exe")
     WinClose("Select an app")
 }
-a_teams(*) {
-    switch_app_status("ahk_exe ms-teams.exe")
+ToggleTeams(*) {
+    SwitchAppStatus("ahk_exe ms-teams.exe")
     WinClose("Select an app")
 }
-a_edge(*) {
-    switch_app_status("ahk_exe msedge.exe")
+ToggleEdge(*) {
+    SwitchAppStatus("ahk_exe msedge.exe")
     WinClose("Select an app")
 }
-a_chrome(*) {
-    switch_app_status("ahk_exe chrome.exe")
+ToggleChrome(*) {
+    SwitchAppStatus("ahk_exe chrome.exe")
     WinClose("Select an app")
 }
-a_code(*) {
-    switch_app_status("ahk_exe Code.exe", "code")
+ToggleCode(*) {
+    SwitchAppStatus("ahk_exe Code.exe", "code")
     WinClose("Select an app")
 }
-exit_gui(*) {
+ExitGui(*) {
     If WinExist("Select an app") {
 		WinClose
     }
@@ -143,11 +163,11 @@ Alt::
         MyGui := Gui(, "Select an app")
         MyGui.SetFont("s14")
         apps := [
-            Map("app_name", "Outlook", "func", a_outlook, "win_title", "ahk_exe outlook.exe"),
-            Map("app_name", "Teams", "func", a_teams, "win_title", "ahk_exe ms-teams.exe"),
-            Map("app_name", "Edge", "func", a_edge, "win_title", "ahk_exe msedge.exe"),
-            Map("app_name", "Chrome", "func", a_chrome, "win_title", "ahk_exe chrome.exe"),
-            Map("app_name", "VSCode", "func", a_code, "win_title", "ahk_exe Code.exe")
+            Map("app_name", "Outlook", "func", ToggleOutlook, "win_title", "ahk_exe outlook.exe"),
+            Map("app_name", "Teams", "func", ToggleTeams, "win_title", "ahk_exe ms-teams.exe"),
+            Map("app_name", "Edge", "func", ToggleEdge, "win_title", "ahk_exe msedge.exe"),
+            Map("app_name", "Chrome", "func", ToggleChrome, "win_title", "ahk_exe chrome.exe"),
+            Map("app_name", "VSCode", "func", ToggleCode, "win_title", "ahk_exe Code.exe")
         ]
         for (v in apps) {
             opt_disabled := ""
@@ -158,8 +178,8 @@ Alt::
             }
             MyGui.Add("Button", opt_disabled "W250", v["app_name"] name_disabled).OnEvent("click", v["func"])
         }
-        MyGui.OnEvent("Escape", exit_gui) ; 10秒後にウインドウを閉じる
-        SetTimer(exit_gui, 10000)
+        MyGui.OnEvent("Escape", ExitGui) ; 10秒後にウインドウを閉じる
+        SetTimer(ExitGui, 10000)
         MyGui.show()
     }
 }
@@ -212,7 +232,7 @@ RShift & g::{
     Send "^c"
     ClipWait 1
     copied := String(A_Clipboard)
-    if (String(A_Clipboard) != "") {
+    if (copied != "") {
         if not WinActive("ahk_exe chrome.exe") {
             if WinExist("ahk_exe msedge.exe") {
                 WinActivate
@@ -222,9 +242,10 @@ RShift & g::{
                 return
             }
         }
-        SendInput "^t" "^v" "{Enter}"
+        SendInput "^t" 
+        PasteAndWait(copied)
+        SendInput "{Enter}"
     }
-    sleep 500 ; タブを開いてペーストする間にクリップボードが上書きされるのを防ぐため
     A_Clipboard := clip_data
 }
 
@@ -242,7 +263,9 @@ RShift & m::{
         A_Clipboard := ""
         A_Clipboard := "https://outlook.office.com/mail/"
         ClipWait 1
-        SendInput "^t" "^v" "{Enter}"
+        SendInput "^t" 
+        PasteAndWait(A_Clipboard)
+        SendInput "{Enter}"
         sleep 500
         A_Clipboard := clip_data
     } else {
@@ -265,7 +288,9 @@ RShift & c::{
         A_Clipboard := ""
         A_Clipboard := "https://outlook.office.com/calendar/view/week"
         ClipWait 1
-        SendInput "^t" "^v" "{Enter}"
+        SendInput "^t" 
+        PasteAndWait(A_Clipboard)
+        SendInput "{Enter}"
         sleep 500
         A_Clipboard := clip_data
     } else {
