@@ -49,7 +49,7 @@ PasteAndWait(text, max_loop := 500) {
     Loop {
         SendInput "^c"
         sleep 50
-        i ++
+        i += 1
         if (InStr(String(A_Clipboard), text) || i >= max_loop) {
             break
         }
