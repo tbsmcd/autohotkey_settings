@@ -224,6 +224,7 @@ RShift & g::{
         }
         SendInput "^t" "^v" "{Enter}"
     }
+    sleep 500 ; タブを開いてペーストする間にクリップボードが上書きされるのを防ぐため
     A_Clipboard := clip_data
 }
 
