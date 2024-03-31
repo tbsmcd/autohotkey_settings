@@ -121,70 +121,63 @@ Ctrl + 0 VSCode
 /*
 ===================================
 GUI
-アプリをトグルでアクティブ/インアクティブ
-アプリが起動していない場合は起動
-起動コマンドが指定されていない場合は
-アプリ未起動時は button が disabled になる
+アプリを listview で選択するランチャ
+数字でも選べる
 ===================================
 */
-ToggleOutlook(*) {
-    SwitchAppStatus("ahk_exe outlook.exe")
-    WinClose("Select an app")
-}
-ToggleTeams(*) {
-    SwitchAppStatus("ahk_exe ms-teams.exe")
-    WinClose("Select an app")
-}
-ToggleEdge(*) {
-    SwitchAppStatus("ahk_exe msedge.exe")
-    WinClose("Select an app")
-}
-ToggleChrome(*) {
-    SwitchAppStatus("ahk_exe chrome.exe")
-    WinClose("Select an app")
-}
-ToggleCode(*) {
-    SwitchAppStatus("ahk_exe Code.exe", "code")
-    WinClose("Select an app")
-}
+
 ExitGui(*) {
-    If WinExist("Select an app") {
+    If WinExist("Launcher") {
 		WinClose
     }
 }
 
 /*
-Alt 連打で GUI を起動
+右 Shift + L でランチャ起動
 */
-Alt::
-{
-    if (A_ThisHotkey == A_PriorHotkey && A_TimeSincePriorHotkey <= 400) {
-        If WinExist("Select an app") {
-            WinActivate
-            return
-        }
-        MyGui := Gui(, "Select an app")
-        MyGui.SetFont("s14")
-        apps := [
-            Map("app_name", "Outlook", "func", ToggleOutlook, "win_title", "ahk_exe outlook.exe"),
-            Map("app_name", "Teams", "func", ToggleTeams, "win_title", "ahk_exe ms-teams.exe"),
-            Map("app_name", "Edge", "func", ToggleEdge, "win_title", "ahk_exe msedge.exe"),
-            Map("app_name", "Chrome", "func", ToggleChrome, "win_title", "ahk_exe chrome.exe"),
-            Map("app_name", "VSCode", "func", ToggleCode, "win_title", "ahk_exe Code.exe")
-        ]
-        for (v in apps) {
-            opt_disabled := ""
-            name_disabled := ""
-            if not WinExist(v["win_title"]) {
-                opt_disabled := "disabled "
-                name_disabled := " (Not Running)"
-            }
-            MyGui.Add("Button", opt_disabled "W250", v["app_name"] name_disabled).OnEvent("click", v["func"])
-        }
-        MyGui.OnEvent("Escape", ExitGui) ; 10秒後にウインドウを閉じる
-        SetTimer(ExitGui, 10000)
-        MyGui.show()
+Rshift & l::{
+    If WinExist("Launcher") {
+        WinActivate
+        return
     }
+    apps := [
+        Map("app_name", "Outlook", "win_title", "ahk_exe outlook.exe"),
+        Map("app_name", "Teams", "win_title", "ahk_exe ms-teams.exe"),
+        Map("app_name", "Edge", "win_title", "ahk_exe msedge.exe"),
+        Map("app_name", "Chrome", "win_title", "ahk_exe chrome.exe"),
+        Map("app_name", "VSCode", "win_title", "ahk_exe Code.exe"),
+    ]
+    MyGui := Gui(, "Launcher")
+    LV := MyGui.Add("ListView", "-Multi R" apps.Length +1, ["Id", "Name"])
+    for (k,v in apps) {
+        opt_disabled := ""
+        name_disabled := ""
+        if not WinExist(v["win_title"]) {
+            opt_disabled := "disabled "
+            name_disabled := " (Not Running)"
+        }
+        LV.Add(, k, v["app_name"] name_disabled)
+    }
+    LV.Add(, "q", "Quit")
+    LV.ModifyCol ; Auto-size each column to fit its contents.
+
+    ; Enter 打鍵を検知するために隠しボタンを配置
+    MyGui.Add("Button", "Hidden Default", "OK").OnEvent("Click", LV_Enter)
+    LV_Enter(*) {
+        if MyGui.FocusedCtrl != LV
+            return
+        id := LV.GetNext(0, "Forcused")
+        if apps.Has(id) {
+            SwitchAppStatus(apps[id]["win_title"])
+            WinClose("Launcher")
+        } else if (id = apps.Length + 1) {
+            WinClose("Launcher")
+        }
+    }
+
+    MyGui.OnEvent("Escape", ExitGui) ; ウインドウを閉じる
+    SetTimer(ExitGui, 10000)
+    MyGui.Show
 }
 
 /*
