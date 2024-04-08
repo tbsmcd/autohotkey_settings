@@ -69,20 +69,10 @@ PasteAndWait(text, max_loop := 500) {
 ; mac 風にスクリーンショット
 ^+4::Send '{PrintScreen}'
 /*
- Esc で IMEオフ + Esc 送出
- Google IME の設定で F12 に「IME無効化」を割り当てている
- Edge, Chrome がアクティブの場合は F12 を送信しない
- (Dev Tools が開くため)
+ Esc で IMEオフ（半角/全角） + Esc 送出
  $ は Esc の無限ループ防止のため
 */
-$Esc::
-{
-    if (WinActive("ahk_exe chrome.exe") or WinActive("ahk_exe msedge.exe")) {
-        Send '{Esc}'
-    } else {
-        Send '{Esc}{F12}'
-    }
-}
+$Esc::Send '{vkF3sc029}{Esc}'
 /*
 ===================================
 ホットキー
@@ -117,6 +107,21 @@ Ctrl + 0 VSCode
 	SwitchAppStatus("ahk_exe Code.exe", "Code")
 }
 
+/*
+Ctrl + 9 Edge
+*/
+^9::
+{
+	SwitchAppStatus("ahk_exe msedge.exe", "Code")
+}
+
+/*
+Ctrl + 8 teams
+*/
+^8::
+{
+	SwitchAppStatus("ahk_exe ms-teams.exe", "Code")
+}
 
 /*
 ===================================
@@ -141,11 +146,11 @@ Rshift & l::{
         return
     }
     apps := [
-        Map("app_name", "Outlook", "win_title", "ahk_exe outlook.exe"),
-        Map("app_name", "Teams", "win_title", "ahk_exe ms-teams.exe"),
-        Map("app_name", "Edge", "win_title", "ahk_exe msedge.exe"),
-        Map("app_name", "Chrome", "win_title", "ahk_exe chrome.exe"),
-        Map("app_name", "VSCode", "win_title", "ahk_exe Code.exe"),
+        Map("app_name", "Outlook", "win_title", "ahk_exe outlook.exe", "is_active", true),
+        Map("app_name", "Teams", "win_title", "ahk_exe ms-teams.exe", "is_active", true),
+        Map("app_name", "Edge", "win_title", "ahk_exe msedge.exe", "is_active", true),
+        Map("app_name", "VSCode", "win_title", "ahk_exe Code.exe", "is_active", true),
+        Map("app_name", "PowerPoint", "win_title", "ahk_exe POWERPNT.exe", "is_active", true),
     ]
     MyGui := Gui(, "Launcher")
     LV := MyGui.Add("ListView", "-Multi R" apps.Length +1, ["Id", "Name"])
@@ -155,6 +160,7 @@ Rshift & l::{
         if not WinExist(v["win_title"]) {
             opt_disabled := "disabled "
             name_disabled := " (Not Running)"
+            apps[k]["is_active"] := false
         }
         LV.Add(, k, v["app_name"] name_disabled)
     }
@@ -167,9 +173,13 @@ Rshift & l::{
         if MyGui.FocusedCtrl != LV
             return
         id := LV.GetNext(0, "Forcused")
-        if apps.Has(id) {
-            SwitchAppStatus(apps[id]["win_title"])
-            WinClose("Launcher")
+        if (apps.Has(id)) {
+            if (apps[id]["is_active"]) {
+                SwitchAppStatus(apps[id]["win_title"])
+                WinClose("Launcher")
+            } else {
+                MyGui.Flash
+            }
         } else if (id = apps.Length + 1) {
             WinClose("Launcher")
         }
@@ -209,12 +219,6 @@ RShift::{
 ===================================
 どのアプリからもググる or URLを開く
 右 Shift + g で発火
-※ メインブラウザが Edge, Chrome も併用しているのが前提
-- Chrome 上で操作した場合 → Chrome で開く
-- それ以外で操作した場合
-    - Edge が開いている場合は Edge で開く
-    - 開いていない場合はメッセージを表示
-
 検索文字列の入力には Send ではなく SendInput を使う
 > また、送信中にキーボードやマウスを操作した場合、バッファリングが行われるため、
 > ユーザーのキー入力と送信中のキー入力が混在することを防ぐことができます。
@@ -229,14 +233,12 @@ RShift & g::{
     ClipWait 1
     copied := String(A_Clipboard)
     if (copied != "") {
-        if not WinActive("ahk_exe chrome.exe") {
-            if WinExist("ahk_exe msedge.exe") {
-                WinActivate
-            } else {
-                MsgBox "Edge が起動していません"
-                A_Clipboard := clip_data
-                return
-            }
+        if WinExist("ahk_exe msedge.exe") {
+            WinActivate
+        } else {
+            MsgBox "Edge が起動していません"
+            A_Clipboard := clip_data
+            return
         }
         SendInput "^t" 
         PasteAndWait(copied)
@@ -297,21 +299,16 @@ RShift & c::{
 
 /*
 ===================================
-どのアプリからも Edge の新タブを開く
+どのアプリからもブラウザの新タブを開く
 右 Shift + t で発火
-※ メインブラウザが Edge, Chrome も併用しているのが前提
-- Edge が開いている場合は Edge で開く
-- 開いていない場合はメッセージを表示
 ===================================
 */
 
 RShift & t::{
-    if not WinActive("ahk_exe chrome.exe") {
-        if WinExist("ahk_exe msedge.exe") {
-            WinActivate
-            Send "^t"
-        } else {
-            MsgBox "Edge が起動していません"
-        }
+    if WinExist("ahk_exe msedge.exe") {
+        WinActivate
+        Send "^t"
+    } else {
+        MsgBox "Edge が起動していません"
     }
 }
